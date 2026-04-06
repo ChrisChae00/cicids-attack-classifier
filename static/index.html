@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Attack Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px;
+    }
+
+    .container { width: 100%; max-width: 960px; }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #58a6ff;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      font-size: 0.95rem;
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .upload-area {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    input[type="file"] {
+      flex: 1;
+      min-width: 200px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #c9d1d9;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    input[type="file"]::file-selector-button {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #c9d1d9;
+      padding: 6px 14px;
+      margin-right: 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    button {
+      background: #238636;
+      border: 1px solid #2ea043;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 24px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    button:hover:not(:disabled) { background: #2ea043; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .spinner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      color: #8b949e;
+      font-size: 0.9rem;
+      margin-top: 16px;
+    }
+
+    .spinner.active { display: flex; }
+
+    .spinner-ring {
+      width: 20px; height: 20px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      display: none;
+      background: #1a0a0a;
+      border: 1px solid #da3633;
+      border-radius: 6px;
+      color: #f85149;
+      font-size: 0.88rem;
+      margin-top: 16px;
+      padding: 12px 16px;
+    }
+
+    .error-box.active { display: block; }
+
+    .summary-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-header h2 { font-size: 1.1rem; color: #e6edf3; }
+    .summary-header .total { font-size: 0.88rem; color: #8b949e; }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .badge {
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 12px;
+    }
+
+    .badge-green  { background: #0d2e12; border: 1px solid #2ea043; color: #3fb950; }
+    .badge-red    { background: #2e0d0d; border: 1px solid #da3633; color: #f85149; }
+    .badge-yellow { background: #2e280d; border: 1px solid #9e6a03; color: #d29922; }
+    .badge-blue   { background: #0d1a2e; border: 1px solid #1f6feb; color: #58a6ff; }
+    .badge-orange { background: #2e1a0d; border: 1px solid #bd561d; color: #f0883e; }
+    .badge-purple { background: #1a0d2e; border: 1px solid #6e40c9; color: #a371f7; }
+    .badge-gray   { background: #21262d; border: 1px solid #30363d; color: #8b949e; }
+
+    .results-section { display: none; }
+    .results-section.active { display: block; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: #21262d;
+      color: #8b949e;
+      font-weight: 600;
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid #30363d;
+    }
+
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #21262d;
+      color: #c9d1d9;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #161b22; }
+
+    .confidence { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cyber Attack Predictor</h1>
+    <p class="subtitle">
+      Upload a CSV file containing 77 network traffic features. The model will classify each row
+      as Benign or identify the attack type (DoS, DDoS, BruteForce, PortScan, WebAttack, Botnet).
+    </p>
+
+    <div class="card">
+      <div class="upload-area">
+        <input type="file" id="csvFile" accept=".csv" />
+        <button id="runBtn" onclick="runPrediction()">Run Prediction</button>
+      </div>
+      <div class="spinner" id="spinner">
+        <div class="spinner-ring"></div>
+        <span>Analyzing traffic data&hellip;</span>
+      </div>
+      <div class="error-box" id="errorBox"></div>
+    </div>
+
+    <div class="card results-section" id="summaryCard">
+      <div class="summary-header">
+        <h2>Summary</h2>
+        <span class="total" id="totalRows"></span>
+      </div>
+      <div class="badges" id="summaryBadges"></div>
+    </div>
+
+    <div class="card results-section" id="resultsCard">
+      <h2 style="font-size:1.1rem;color:#e6edf3;margin-bottom:18px;">Results</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Prediction</th>
+              <th>Confidence (%)</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CLASS_COLORS = {
+      benign:     'badge-green',
+      dos:        'badge-red',
+      ddos:       'badge-red',
+      bruteforce: 'badge-yellow',
+      portscan:   'badge-blue',
+      webattack:  'badge-orange',
+      botnet:     'badge-purple',
+    };
+
+    function badgeClass(label) {
+      const key = label.toLowerCase().replace(/[^a-z]/g, '');
+      for (const [k, cls] of Object.entries(CLASS_COLORS)) {
+        if (key.includes(k)) return cls;
+      }
+      return 'badge-gray';
+    }
+
+    function makeBadge(label, text) {
+      const span = document.createElement('span');
+      span.className = 'badge ' + badgeClass(label);
+      span.textContent = text;
+      return span;
+    }
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg;
+      box.classList.add('active');
+    }
+
+    function clearState() {
+      document.getElementById('errorBox').classList.remove('active');
+      document.getElementById('errorBox').textContent = '';
+      document.getElementById('summaryCard').classList.remove('active');
+      document.getElementById('resultsCard').classList.remove('active');
+      document.getElementById('summaryBadges').textContent = '';
+      document.getElementById('resultsBody').textContent = '';
+    }
+
+    async function runPrediction() {
+      const fileInput = document.getElementById('csvFile');
+      const btn = document.getElementById('runBtn');
+      const spinner = document.getElementById('spinner');
+
+      if (!fileInput.files.length) {
+        showError('Please select a CSV file before running.');
+        return;
+      }
+
+      clearState();
+      btn.disabled = true;
+      spinner.classList.add('active');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        const res = await fetch('/predict-csv', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!res.ok) {
+          let msg;
+          if (typeof data.detail === 'object' && data.detail !== null) {
+            const missing = data.detail.missing_features || [];
+            msg = (data.detail.error || 'Error') + (missing.length ? ': ' + missing.join(', ') : '');
+          } else {
+            msg = data.detail || 'Unknown error';
+          }
+          showError(msg);
+          return;
+        }
+
+        // Summary
+        document.getElementById('totalRows').textContent = data.total_rows + ' rows analyzed';
+        const badgesEl = document.getElementById('summaryBadges');
+        for (const [label, count] of Object.entries(data.summary)) {
+          badgesEl.appendChild(makeBadge(label, label + ': ' + count));
+        }
+        document.getElementById('summaryCard').classList.add('active');
+
+        // Table
+        const tbody = document.getElementById('resultsBody');
+        for (const row of data.results) {
+          const tr = document.createElement('tr');
+
+          const tdRow = document.createElement('td');
+          tdRow.textContent = row.row;
+
+          const tdPred = document.createElement('td');
+          tdPred.appendChild(makeBadge(row.prediction, row.prediction));
+
+          const tdConf = document.createElement('td');
+          tdConf.className = 'confidence';
+          tdConf.textContent = row.confidence.toFixed(2);
+
+          tr.appendChild(tdRow);
+          tr.appendChild(tdPred);
+          tr.appendChild(tdConf);
+          tbody.appendChild(tr);
+        }
+        document.getElementById('resultsCard').classList.add('active');
+      } catch (err) {
+        showError('Network error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        spinner.classList.remove('active');
+      }
+    }
+  </script>
+</body>
+</html>
