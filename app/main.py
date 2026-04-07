@@ -1,4 +1,5 @@
 import io
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -31,12 +32,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Cyber Attack Predictor", lifespan=lifespan)
 
+# Read allowed origins from environment variables, fallback to localhost for development
+origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:8000,http://localhost:8000")
+allowed_origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # Restrict methods to only what this API actually needs
+    allow_methods=["GET", "POST", "OPTIONS"],
+    # Restrict headers to standard API headers and prevent arbitrary headers
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 
@@ -51,13 +58,14 @@ def get_features():
 
 
 @app.post("/predict-csv")
-async def predict_csv(file: UploadFile = File(...)):
+# Remove 'async' to allow FastAPI to execute this CPU-bound handler in a separate threadpool
+def predict_csv(file: UploadFile = File(...)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only .csv files are accepted.")
 
     try:
-        contents = await file.read()
-        df = pd.read_csv(io.BytesIO(contents))
+        # Read the file stream directly to prevent memory overload (OOM issues)
+        df = pd.read_csv(file.file)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {e}")
 
@@ -83,15 +91,17 @@ async def predict_csv(file: UploadFile = File(...)):
             actuals = df["Actual_Label"].astype(str).tolist()
             correct_count = 0
             for i, (label, proba, actual) in enumerate(zip(labels, probas, actuals)):
+                # Convert Numpy element to standard Python string to avoid JSON serialization errors
+                safe_label = str(label)
                 confidence = round(float(np.max(proba)) * 100, 2)
-                is_correct = label == actual
+                is_correct = safe_label == actual
                 if is_correct:
                     correct_count += 1
-                summary[label] = summary.get(label, 0) + 1
+                summary[safe_label] = summary.get(safe_label, 0) + 1
                 results.append({
                     "row": i + 1,
                     "actual": actual,
-                    "prediction": label,
+                    "prediction": safe_label,
                     "confidence": confidence,
                     "is_correct": is_correct,
                 })
@@ -105,9 +115,11 @@ async def predict_csv(file: UploadFile = File(...)):
             }
         else:
             for i, (label, proba) in enumerate(zip(labels, probas)):
+                # Convert Numpy element to standard Python string to avoid JSON serialization errors
+                safe_label = str(label)
                 confidence = round(float(np.max(proba)) * 100, 2)
-                summary[label] = summary.get(label, 0) + 1
-                results.append({"row": i + 1, "prediction": label, "confidence": confidence})
+                summary[safe_label] = summary.get(safe_label, 0) + 1
+                results.append({"row": i + 1, "prediction": safe_label, "confidence": confidence})
             return {"mode": "unseen", "total_rows": len(results), "summary": summary, "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {e}")
