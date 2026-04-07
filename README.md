@@ -1,43 +1,55 @@
-# cicids-attack-classifier
+# CICIDS-2017 Attack Classifier
 
 A FastAPI web application that classifies network traffic as Benign or a specific attack type (DoS, DDoS, BruteForce, PortScan, WebAttack, Botnet) using a pre-trained XGBoost model trained on the CICIDS dataset.
 
+## Model Research & Comparison
+
+This project includes a comprehensive research phase where different machine learning models were evaluated using the CICIDS-2017 dataset.
+
+- **Notebook:** [`final-project-ai-ml.ipynb`](./notebook/final-project-ai-ml.ipynb)
+- **Key Highlights:**
+  - Granular label mapping (15 types to 7 major categories).
+  - Data preprocessing pipeline (handling missing/infinite values, scaling).
+  - Comparative analysis of classifiers (XGBoost, RandomForest, etc.).
+  - _Note: The research was conducted in a Kaggle environment using a 2.3M+ row dataset._
+
 ## Project Structure
 
-```
+```text
 cicids-attack-classifier/
-├── app/
-│   ├── main.py
-│   ├── model/
+├── app/                        # Backend Application
+│   ├── main.py                 # FastAPI routing & logic
+│   ├── model/                  # Serialized model artifacts
 │   │   ├── xgb_model.pkl
 │   │   ├── scaler.pkl
 │   │   ├── label_encoder.pkl
 │   │   └── feature_names.pkl
-│   └── testset/
-│       ├── demo_attack_heavy.csv
-│       ├── demo_balanced.csv
-│       ├── demo_realistic.csv
-│       └── unseen_test_data.csv
-├── static/
+│   └── testset/                # Sample CSVs for testing
+├── notebook/                   # Research & Experiments
+│   └── final-project-ai-ml.ipynb
+├── static/                     # Frontend UI
 │   └── index.html
-├── requirements.txt
+├── requirements.txt            # Python dependencies
 └── README.md
 ```
 
-## Setup
+## Setup & Local Run
 
-1. Place the four model files in `app/model/`:
-   - `xgb_model.pkl`
-   - `scaler.pkl`
-   - `label_encoder.pkl`
-   - `feature_names.pkl`
+### 1. Requirements
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Ensure you have Python 3.8+ installed. Install the required packages:
 
-## Run Locally
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Model Preparation
+
+Place the following four model files in `app/model/`:
+
+- `xgb_model.pkl`, `scaler.pkl`, `label_encoder.pkl`, `feature_names.pkl`
+
+### 3. Run the Application
 
 ```bash
 uvicorn app.main:app --reload
@@ -46,74 +58,35 @@ uvicorn app.main:app --reload
 Open your browser at [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 > [!NOTE]
-> For macOS users, accessing via `http://127.0.0.1:8000` is recommended over `localhost` to ensure reliable connectivity and avoid potential IPv6 resolution issues.
+> For macOS users, accessing via `http://127.0.0.1:8000` is recommended over `localhost` to avoid IPv6 resolution issues.
 
-## Sample Data
+## Sample Data for Testing
 
-Sample CSV files containing test network traffic data are provided for verification:
+Sample CSV files are provided in `app/testset/` to verify the classifier:
 
-- `app/testset/unseen_test_data.csv`
-- `app/testset/demo_balanced.csv`
-- `app/testset/demo_attack_heavy.csv`
-- `app/testset/demo_realistic.csv`
-
+- `unseen_test_data.csv`: Real-world scenario data.
+- `demo_balanced.csv`: Evenly distributed attack types.
+- `demo_attack_heavy.csv` / `demo_realistic.csv`: Stress-test scenarios.
 
 ## API Documentation
 
 ### `GET /features`
 
-Returns the list of 77 required feature names.
-
-**Response:**
-
-```json
-{
-  "features": ["feature_1", "feature_2", "..."]
-}
-```
+Returns the list of 77 required network feature names.
 
 ### `POST /predict-csv`
 
-Upload a CSV file to get attack predictions for each row.
+Upload a CSV file to get batch predictions.
 
-**Request:**
+**Example Request:**
 
 ```bash
-curl -X POST http://localhost:8000/predict-csv \
-  -F "file=@network_traffic.csv"
+curl -X POST http://localhost:8000/predict-csv -F "file=@network_traffic.csv"
 ```
 
-**Response:**
-
-```json
-{
-  "total_rows": 3,
-  "summary": {
-    "BENIGN": 2,
-    "DoS Hulk": 1
-  },
-  "results": [
-    { "row": 1, "prediction": "BENIGN", "confidence": 99.87 },
-    { "row": 2, "prediction": "DoS Hulk", "confidence": 97.43 },
-    { "row": 3, "prediction": "BENIGN", "confidence": 98.12 }
-  ]
-}
-```
-
-**Error responses:**
-
-- `400` — Wrong file type, or missing required feature columns
-- `500` — Prediction error
-
-## Deploy on Render
+## Deployment (Render)
 
 1. Push this repository to GitHub.
-2. Create a new **Web Service** on [Render](https://render.com).
-3. Set the **Start Command**:
-   ```
-   uvicorn app.main:app --host 0.0.0.0 --port $PORT
-   ```
-4. Set **Build Command**:
-   ```
-   pip install -r requirements.txt
-   ```
+2. Connect to [Render](https://render.com) as a **Web Service**.
+3. **Build Command:** `pip install -r requirements.txt`
+4. **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`

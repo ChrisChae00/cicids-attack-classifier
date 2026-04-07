@@ -6,6 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -29,6 +30,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Cyber Attack Predictor", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
