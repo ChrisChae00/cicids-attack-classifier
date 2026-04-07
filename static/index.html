@@ -4,45 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyber Attack Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      background: #0d1117;
-      color: #c9d1d9;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px 16px;
+    :root {
+      --bg:        #080c10;
+      --surface:   #0d1117;
+      --surface2:  #161b22;
+      --border:    #21262d;
+      --border2:   #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --accent2:   #1f6feb;
+      --green:  #3fb950; --green-bg:  #0d2e12; --green-bd:  #2ea043;
+      --red:    #f85149; --red-bg:    #2e0d0d; --red-bd:    #da3633;
+      --yellow: #d29922; --yellow-bg: #2e280d; --yellow-bd: #9e6a03;
+      --blue:   #58a6ff; --blue-bg:   #0d1a2e; --blue-bd:   #1f6feb;
+      --orange: #f0883e; --orange-bg: #2e1a0d; --orange-bd: #bd561d;
+      --purple: #a371f7; --purple-bg: #1a0d2e; --purple-bd: #6e40c9;
+      --gray:   #8b949e; --gray-bg:   #21262d; --gray-bd:   #30363d;
     }
 
-    .container { width: 100%; max-width: 960px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 48px 20px 80px;
+    }
+
+    /* Ambient glow behind header */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 200px;
+      background: radial-gradient(ellipse at center, rgba(31,111,235,.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
 
     h1 {
-      font-size: 2rem;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
       font-weight: 700;
-      color: #58a6ff;
-      margin-bottom: 8px;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 10px;
     }
+
+    h1 span { color: var(--accent); }
 
     .subtitle {
-      color: #8b949e;
+      color: var(--muted);
       font-size: 0.95rem;
-      margin-bottom: 36px;
-      line-height: 1.6;
+      line-height: 1.65;
+      max-width: 560px;
     }
 
+    /* ── Layout wrapper ── */
+    .main { max-width: 1200px; margin: 0 auto; }
+
+    /* ── Upload card ── */
     .card {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 10px;
-      padding: 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 24px 28px;
       margin-bottom: 24px;
     }
 
-    .upload-area {
+    .upload-row {
       display: flex;
       gap: 12px;
       align-items: center;
@@ -51,222 +103,428 @@
 
     input[type="file"] {
       flex: 1;
-      min-width: 200px;
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 6px;
+      min-width: 220px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
       padding: 10px 14px;
-      color: #c9d1d9;
-      font-size: 0.9rem;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
       cursor: pointer;
+      transition: border-color .15s;
     }
 
+    input[type="file"]:hover { border-color: var(--accent2); }
+
     input[type="file"]::file-selector-button {
-      background: #21262d;
-      border: 1px solid #30363d;
-      border-radius: 4px;
-      color: #c9d1d9;
+      background: var(--border);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      color: var(--text);
       padding: 6px 14px;
       margin-right: 12px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.83rem;
+      transition: background .15s;
     }
 
-    button {
-      background: #238636;
-      border: 1px solid #2ea043;
-      border-radius: 6px;
+    input[type="file"]::file-selector-button:hover { background: var(--border2); }
+
+    .run-btn {
+      background: var(--accent2);
+      border: 1px solid #388bfd;
+      border-radius: 8px;
       color: #fff;
       cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
       font-size: 0.9rem;
       font-weight: 600;
-      padding: 10px 24px;
-      transition: background 0.15s;
+      padding: 10px 26px;
+      transition: background .15s, box-shadow .15s;
       white-space: nowrap;
     }
 
-    button:hover:not(:disabled) { background: #2ea043; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .run-btn:hover:not(:disabled) {
+      background: #388bfd;
+      box-shadow: 0 0 14px rgba(56,139,253,.35);
+    }
 
+    .run-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .tip {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tip strong { color: var(--accent); }
+
+    /* Spinner */
     .spinner {
       display: none;
       align-items: center;
       gap: 10px;
-      color: #8b949e;
-      font-size: 0.9rem;
-      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 14px;
     }
 
     .spinner.active { display: flex; }
 
-    .spinner-ring {
-      width: 20px; height: 20px;
-      border: 2px solid #30363d;
-      border-top-color: #58a6ff;
+    .ring {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Error */
     .error-box {
       display: none;
-      background: #1a0a0a;
-      border: 1px solid #da3633;
-      border-radius: 6px;
-      color: #f85149;
-      font-size: 0.88rem;
-      margin-top: 16px;
-      padding: 12px 16px;
+      background: #160808;
+      border: 1px solid var(--red-bd);
+      border-radius: 8px;
+      color: var(--red);
+      font-size: 0.85rem;
+      margin-top: 14px;
+      padding: 11px 16px;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .error-box.active { display: block; }
 
-    .summary-header {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .summary-header h2 { font-size: 1.1rem; color: #e6edf3; }
-    .summary-header .total { font-size: 0.88rem; color: #8b949e; }
-
-    .badges { display: flex; flex-wrap: wrap; gap: 8px; }
-
+    /* ── Badges ── */
     .badge {
+      display: inline-block;
       border-radius: 20px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      padding: 4px 12px;
+      padding: 3px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .02em;
     }
 
-    .badge-green  { background: #0d2e12; border: 1px solid #2ea043; color: #3fb950; }
-    .badge-red    { background: #2e0d0d; border: 1px solid #da3633; color: #f85149; }
-    .badge-yellow { background: #2e280d; border: 1px solid #9e6a03; color: #d29922; }
-    .badge-blue   { background: #0d1a2e; border: 1px solid #1f6feb; color: #58a6ff; }
-    .badge-orange { background: #2e1a0d; border: 1px solid #bd561d; color: #f0883e; }
-    .badge-purple { background: #1a0d2e; border: 1px solid #6e40c9; color: #a371f7; }
-    .badge-gray   { background: #21262d; border: 1px solid #30363d; color: #8b949e; }
+    .badge-green  { background: var(--green-bg);  border: 1px solid var(--green-bd);  color: var(--green); }
+    .badge-red    { background: var(--red-bg);    border: 1px solid var(--red-bd);    color: var(--red); }
+    .badge-yellow { background: var(--yellow-bg); border: 1px solid var(--yellow-bd); color: var(--yellow); }
+    .badge-blue   { background: var(--blue-bg);   border: 1px solid var(--blue-bd);   color: var(--blue); }
+    .badge-orange { background: var(--orange-bg); border: 1px solid var(--orange-bd); color: var(--orange); }
+    .badge-purple { background: var(--purple-bg); border: 1px solid var(--purple-bd); color: var(--purple); }
+    .badge-gray   { background: var(--gray-bg);   border: 1px solid var(--gray-bd);   color: var(--gray); }
 
+    /* ── Results area ── */
     .results-section { display: none; }
-    .results-section.active { display: block; }
+    .results-section.active { display: grid; }
 
-    .table-wrap { overflow-x: auto; }
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .results-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 480px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
     }
 
+    thead { position: sticky; top: 0; z-index: 1; }
+
     th {
-      background: #21262d;
-      color: #8b949e;
+      background: var(--border);
+      color: var(--muted);
       font-weight: 600;
-      padding: 10px 16px;
+      padding: 10px 14px;
       text-align: left;
-      border-bottom: 1px solid #30363d;
+      border-bottom: 1px solid var(--border2);
+      white-space: nowrap;
+      font-size: 0.78rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
 
     td {
-      padding: 10px 16px;
-      border-bottom: 1px solid #21262d;
-      color: #c9d1d9;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #161b22; }
+    tbody tr:hover td { background: rgba(255,255,255,.02); }
 
-    .confidence { font-variant-numeric: tabular-nums; }
+    .correct-yes { color: var(--green); font-size: 1rem; }
+    .correct-no  { color: var(--red);   font-size: 1rem; }
+
+    /* Right column */
+    .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+    .chart-wrap {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 240px;
+      margin: 0 auto 16px;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-value.accuracy { color: var(--green); }
+    .stat-value.wrong    { color: var(--red); }
+
+    .breakdown-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* Mode indicator */
+    .mode-pill {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    .mode-demo   { background: rgba(163,113,247,.15); border: 1px solid var(--purple-bd); color: var(--purple); }
+    .mode-unseen { background: rgba(88,166,255,.1);   border: 1px solid var(--blue-bd);   color: var(--blue); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Cyber Attack Predictor</h1>
-    <p class="subtitle">
-      Upload a CSV file containing 77 network traffic features. The model will classify each row
-      as Benign or identify the attack type (DoS, DDoS, BruteForce, PortScan, WebAttack, Botnet).
-    </p>
+  <div class="main">
 
+    <!-- Hero -->
+    <div class="hero">
+      <p class="eyebrow">CICIDS Network Classifier</p>
+      <h1>Cyber Attack <span>Predictor</span></h1>
+      <p class="subtitle">
+        Upload a CSV file with 77 network traffic features. The XGBoost model classifies each row
+        as Benign or identifies the attack type in real time.
+      </p>
+    </div>
+
+    <!-- Upload -->
     <div class="card">
-      <div class="upload-area">
+      <div class="upload-row">
         <input type="file" id="csvFile" accept=".csv" />
-        <button id="runBtn" onclick="runPrediction()">Run Prediction</button>
+        <button class="run-btn" id="runBtn" onclick="runPrediction()">Run Prediction</button>
       </div>
+      <p class="tip"><strong>Tip:</strong> Upload a CSV with an <strong>Actual_Label</strong> column to enable demo mode with accuracy comparison.</p>
       <div class="spinner" id="spinner">
-        <div class="spinner-ring"></div>
+        <div class="ring"></div>
         <span>Analyzing traffic data&hellip;</span>
       </div>
       <div class="error-box" id="errorBox"></div>
     </div>
 
-    <div class="card results-section" id="summaryCard">
-      <div class="summary-header">
-        <h2>Summary</h2>
-        <span class="total" id="totalRows"></span>
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+      <div class="results-grid">
+
+        <!-- Left: table -->
+        <div class="left-col">
+          <div id="modePill"></div>
+          <p class="section-label">Row Results</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr id="tableHead"></tr></thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right: chart + stats -->
+        <div class="right-col">
+          <div class="chart-wrap">
+            <p class="section-label">Prediction Distribution</p>
+            <div class="chart-canvas-wrap">
+              <canvas id="donutChart"></canvas>
+            </div>
+            <div id="statsArea"></div>
+          </div>
+        </div>
+
       </div>
-      <div class="badges" id="summaryBadges"></div>
     </div>
 
-    <div class="card results-section" id="resultsCard">
-      <h2 style="font-size:1.1rem;color:#e6edf3;margin-bottom:18px;">Results</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Row</th>
-              <th>Prediction</th>
-              <th>Confidence (%)</th>
-            </tr>
-          </thead>
-          <tbody id="resultsBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+  </div><!-- /main -->
 
   <script>
+    /* ── Color helpers ── */
     const CLASS_COLORS = {
-      benign:     'badge-green',
-      dos:        'badge-red',
-      ddos:       'badge-red',
-      bruteforce: 'badge-yellow',
-      portscan:   'badge-blue',
-      webattack:  'badge-orange',
-      botnet:     'badge-purple',
+      benign:     { cls: 'badge-green',  hex: '#3fb950' },
+      dos:        { cls: 'badge-red',    hex: '#f85149' },
+      ddos:       { cls: 'badge-red',    hex: '#f85149' },
+      bruteforce: { cls: 'badge-yellow', hex: '#d29922' },
+      portscan:   { cls: 'badge-blue',   hex: '#58a6ff' },
+      webattack:  { cls: 'badge-orange', hex: '#f0883e' },
+      botnet:     { cls: 'badge-purple', hex: '#a371f7' },
     };
 
-    function badgeClass(label) {
+    function colorInfo(label) {
       const key = label.toLowerCase().replace(/[^a-z]/g, '');
-      for (const [k, cls] of Object.entries(CLASS_COLORS)) {
-        if (key.includes(k)) return cls;
+      for (const [k, v] of Object.entries(CLASS_COLORS)) {
+        if (key.includes(k)) return v;
       }
-      return 'badge-gray';
+      return { cls: 'badge-gray', hex: '#8b949e' };
     }
 
     function makeBadge(label, text) {
       const span = document.createElement('span');
-      span.className = 'badge ' + badgeClass(label);
-      span.textContent = text;
+      span.className = 'badge ' + colorInfo(label).cls;
+      span.textContent = text || label;
       return span;
     }
 
+    /* ── State helpers ── */
     function showError(msg) {
-      const box = document.getElementById('errorBox');
-      box.textContent = msg;
-      box.classList.add('active');
+      const b = document.getElementById('errorBox');
+      b.textContent = msg;
+      b.classList.add('active');
     }
 
     function clearState() {
       document.getElementById('errorBox').classList.remove('active');
       document.getElementById('errorBox').textContent = '';
-      document.getElementById('summaryCard').classList.remove('active');
-      document.getElementById('resultsCard').classList.remove('active');
-      document.getElementById('summaryBadges').textContent = '';
+      document.getElementById('resultsSection').classList.remove('active');
+      document.getElementById('tableHead').textContent = '';
       document.getElementById('resultsBody').textContent = '';
+      document.getElementById('statsArea').textContent = '';
+      document.getElementById('modePill').textContent = '';
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     }
 
+    /* ── Chart ── */
+    let chartInstance = null;
+
+    function renderChart(summary) {
+      const labels = Object.keys(summary);
+      const values = Object.values(summary);
+      const colors = labels.map(l => colorInfo(l).hex);
+
+      const ctx = document.getElementById('donutChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: colors,
+            borderColor: '#080c10',
+            borderWidth: 3,
+            hoverBorderWidth: 3,
+          }],
+        },
+        options: {
+          cutout: '68%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#8b949e',
+                font: { family: 'JetBrains Mono', size: 11 },
+                padding: 12,
+                boxWidth: 12,
+                boxHeight: 12,
+              },
+            },
+            tooltip: {
+              backgroundColor: '#161b22',
+              borderColor: '#30363d',
+              borderWidth: 1,
+              titleColor: '#e6edf3',
+              bodyColor: '#8b949e',
+              callbacks: {
+                label: ctx => ' ' + ctx.label + ': ' + ctx.parsed,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    /* ── Table header helpers ── */
+    function addTh(tr, text) {
+      const th = document.createElement('th');
+      th.textContent = text;
+      tr.appendChild(th);
+    }
+
+    function addTd(tr, content) {
+      const td = document.createElement('td');
+      if (content instanceof Node) td.appendChild(content);
+      else td.textContent = content;
+      tr.appendChild(td);
+      return td;
+    }
+
+    /* ── Main prediction handler ── */
     async function runPrediction() {
       const fileInput = document.getElementById('csvFile');
       const btn = document.getElementById('runBtn');
@@ -300,35 +558,103 @@
           return;
         }
 
-        // Summary
-        document.getElementById('totalRows').textContent = data.total_rows + ' rows analyzed';
-        const badgesEl = document.getElementById('summaryBadges');
-        for (const [label, count] of Object.entries(data.summary)) {
-          badgesEl.appendChild(makeBadge(label, label + ': ' + count));
-        }
-        document.getElementById('summaryCard').classList.add('active');
+        const isDemo = data.mode === 'demo';
 
-        // Table
+        /* Mode pill */
+        const pill = document.createElement('span');
+        pill.className = 'mode-pill ' + (isDemo ? 'mode-demo' : 'mode-unseen');
+        pill.textContent = isDemo ? 'Demo Mode — accuracy comparison enabled' : 'Unseen Mode — no ground truth';
+        document.getElementById('modePill').appendChild(pill);
+
+        /* Table headers */
+        const thead = document.getElementById('tableHead');
+        if (isDemo) {
+          ['Row', 'Actual', 'Predicted', 'Conf (%)', 'Correct'].forEach(t => addTh(thead, t));
+        } else {
+          ['Row', 'Prediction', 'Conf (%)'].forEach(t => addTh(thead, t));
+        }
+
+        /* Table rows */
         const tbody = document.getElementById('resultsBody');
         for (const row of data.results) {
           const tr = document.createElement('tr');
-
-          const tdRow = document.createElement('td');
-          tdRow.textContent = row.row;
-
-          const tdPred = document.createElement('td');
-          tdPred.appendChild(makeBadge(row.prediction, row.prediction));
-
-          const tdConf = document.createElement('td');
-          tdConf.className = 'confidence';
-          tdConf.textContent = row.confidence.toFixed(2);
-
-          tr.appendChild(tdRow);
-          tr.appendChild(tdPred);
-          tr.appendChild(tdConf);
+          addTd(tr, row.row);
+          if (isDemo) {
+            addTd(tr, makeBadge(row.actual, row.actual));
+            addTd(tr, makeBadge(row.prediction, row.prediction));
+            addTd(tr, row.confidence.toFixed(2));
+            const correctTd = addTd(tr, '');
+            const mark = document.createElement('span');
+            mark.className = row.is_correct ? 'correct-yes' : 'correct-no';
+            mark.textContent = row.is_correct ? '✓' : '✗';
+            correctTd.appendChild(mark);
+          } else {
+            addTd(tr, makeBadge(row.prediction, row.prediction));
+            addTd(tr, row.confidence.toFixed(2));
+          }
           tbody.appendChild(tr);
         }
-        document.getElementById('resultsCard').classList.add('active');
+
+        /* Chart */
+        renderChart(data.summary);
+
+        /* Stats */
+        const statsArea = document.getElementById('statsArea');
+        if (isDemo) {
+          const correctCount = data.results.filter(r => r.is_correct).length;
+          const wrongCount = data.total_rows - correctCount;
+          const grid = document.createElement('div');
+          grid.className = 'stats-grid';
+
+          const stats = [
+            { label: 'Total Rows', value: data.total_rows, cls: '' },
+            { label: 'Accuracy',   value: data.accuracy + '%', cls: 'accuracy' },
+            { label: 'Correct',    value: correctCount, cls: '' },
+            { label: 'Wrong',      value: wrongCount, cls: 'wrong' },
+          ];
+          for (const s of stats) {
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+            const lbl = document.createElement('div');
+            lbl.className = 'stat-label';
+            lbl.textContent = s.label;
+            const val = document.createElement('div');
+            val.className = 'stat-value ' + s.cls;
+            val.textContent = s.value;
+            card.appendChild(lbl);
+            card.appendChild(val);
+            grid.appendChild(card);
+          }
+          statsArea.appendChild(grid);
+        } else {
+          const card = document.createElement('div');
+          card.className = 'stat-card';
+          card.style.marginBottom = '12px';
+          const lbl = document.createElement('div');
+          lbl.className = 'stat-label';
+          lbl.textContent = 'Total Rows';
+          const val = document.createElement('div');
+          val.className = 'stat-value';
+          val.textContent = data.total_rows;
+          card.appendChild(lbl);
+          card.appendChild(val);
+          statsArea.appendChild(card);
+
+          const bdLabel = document.createElement('p');
+          bdLabel.className = 'section-label';
+          bdLabel.style.marginTop = '12px';
+          bdLabel.textContent = 'Class Breakdown';
+          statsArea.appendChild(bdLabel);
+
+          const breakdown = document.createElement('div');
+          breakdown.className = 'breakdown-badges';
+          for (const [label, count] of Object.entries(data.summary)) {
+            breakdown.appendChild(makeBadge(label, label + ' · ' + count));
+          }
+          statsArea.appendChild(breakdown);
+        }
+
+        document.getElementById('resultsSection').classList.add('active');
       } catch (err) {
         showError('Network error: ' + err.message);
       } finally {

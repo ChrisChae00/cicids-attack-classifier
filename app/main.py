@@ -60,6 +60,7 @@ async def predict_csv(file: UploadFile = File(...)):
         )
 
     try:
+        demo_mode = "Actual_Label" in df.columns
         X = df[feature_names].values
         X_scaled = scaler.transform(X)
         preds = xgb_model.predict(X_scaled)
@@ -68,11 +69,36 @@ async def predict_csv(file: UploadFile = File(...)):
 
         summary = {}
         results = []
-        for i, (label, proba) in enumerate(zip(labels, probas)):
-            confidence = round(float(np.max(proba)) * 100, 2)
-            summary[label] = summary.get(label, 0) + 1
-            results.append({"row": i + 1, "prediction": label, "confidence": confidence})
 
-        return {"total_rows": len(results), "summary": summary, "results": results}
+        if demo_mode:
+            actuals = df["Actual_Label"].astype(str).tolist()
+            correct_count = 0
+            for i, (label, proba, actual) in enumerate(zip(labels, probas, actuals)):
+                confidence = round(float(np.max(proba)) * 100, 2)
+                is_correct = label == actual
+                if is_correct:
+                    correct_count += 1
+                summary[label] = summary.get(label, 0) + 1
+                results.append({
+                    "row": i + 1,
+                    "actual": actual,
+                    "prediction": label,
+                    "confidence": confidence,
+                    "is_correct": is_correct,
+                })
+            accuracy = round(correct_count / len(results) * 100, 2)
+            return {
+                "mode": "demo",
+                "total_rows": len(results),
+                "summary": summary,
+                "accuracy": accuracy,
+                "results": results,
+            }
+        else:
+            for i, (label, proba) in enumerate(zip(labels, probas)):
+                confidence = round(float(np.max(proba)) * 100, 2)
+                summary[label] = summary.get(label, 0) + 1
+                results.append({"row": i + 1, "prediction": label, "confidence": confidence})
+            return {"mode": "unseen", "total_rows": len(results), "summary": summary, "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {e}")
